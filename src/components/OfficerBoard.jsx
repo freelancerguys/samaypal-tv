@@ -99,7 +99,7 @@ export default function OfficerBoard({ board }) {
             {officers.length === 0 ? (
               <tr>
                 <td colSpan={5} className="board__empty">
-                  No SSE / IC officers found for today’s board.
+                  No SSE / IC found for today’s board.
                 </td>
               </tr>
             ) : (
