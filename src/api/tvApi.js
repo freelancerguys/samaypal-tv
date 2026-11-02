@@ -1,6 +1,9 @@
 import { API_BASE_URL, TV_ENDPOINTS } from '../config'
 import { getTvToken } from '../auth'
 
+const RETRY_ATTEMPTS = 4
+const RETRY_DELAY_MS = 350
+
 function buildUrl(path) {
   return `${API_BASE_URL}${path}`
 }
@@ -16,6 +19,15 @@ function authHeaders(token = getTvToken()) {
   return headers
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function shouldRetryStatus(status) {
+  // Mixed LB backends: old nodes return HTML 404 for /api/tv/* without CORS.
+  return status === 404 || status === 502 || status === 503 || status === 504
+}
+
 async function parseJsonResponse(res) {
   const json = await res.json().catch(() => null)
   if (!res.ok) {
@@ -27,9 +39,33 @@ async function parseJsonResponse(res) {
   return json
 }
 
+async function fetchWithLbRetry(url, options = {}, { retries = RETRY_ATTEMPTS } = {}) {
+  let lastError = null
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      const res = await fetch(url, options)
+      if (shouldRetryStatus(res.status) && attempt < retries) {
+        await sleep(RETRY_DELAY_MS * attempt)
+        continue
+      }
+      return res
+    } catch (err) {
+      lastError = err
+      // Browser surfaces failed CORS / network as TypeError from fetch.
+      if (attempt < retries) {
+        await sleep(RETRY_DELAY_MS * attempt)
+        continue
+      }
+    }
+  }
+
+  throw lastError || new Error('Unable to reach SamayPal API')
+}
+
 /** POST /api/tv/login — returns 1-year JWT session */
 export async function loginTvDisplayAPI(password) {
-  const res = await fetch(buildUrl(TV_ENDPOINTS.LOGIN), {
+  const res = await fetchWithLbRetry(buildUrl(TV_ENDPOINTS.LOGIN), {
     method: 'POST',
     headers: {
       Accept: 'application/json',
@@ -42,7 +78,7 @@ export async function loginTvDisplayAPI(password) {
 
 /** GET /api/tv/session — validate stored session */
 export async function getTvSessionAPI(token = getTvToken()) {
-  const res = await fetch(buildUrl(TV_ENDPOINTS.SESSION), {
+  const res = await fetchWithLbRetry(buildUrl(TV_ENDPOINTS.SESSION), {
     method: 'GET',
     headers: authHeaders(token),
   })
@@ -51,7 +87,7 @@ export async function getTvSessionAPI(token = getTvToken()) {
 
 /** GET /api/tv/live — attendance snapshot */
 export async function getTvLiveAPI(token = getTvToken()) {
-  const res = await fetch(buildUrl(TV_ENDPOINTS.LIVE), {
+  const res = await fetchWithLbRetry(buildUrl(TV_ENDPOINTS.LIVE), {
     method: 'GET',
     headers: authHeaders(token),
   })
@@ -63,14 +99,18 @@ export async function getTvLiveAPI(token = getTvToken()) {
  * Returns the fetch Response so the caller can read the stream body.
  */
 export async function openTvLiveStreamAPI(token = getTvToken(), signal) {
-  const res = await fetch(buildUrl(TV_ENDPOINTS.LIVE_STREAM), {
-    method: 'GET',
-    headers: {
-      Accept: 'text/event-stream',
-      ...authHeaders(token),
+  const res = await fetchWithLbRetry(
+    buildUrl(TV_ENDPOINTS.LIVE_STREAM),
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'text/event-stream',
+        ...authHeaders(token),
+      },
+      signal,
     },
-    signal,
-  })
+    { retries: 3 }
+  )
   if (!res.ok) {
     const json = await res.json().catch(() => null)
     const error = new Error(json?.message || `Stream unavailable (${res.status})`)
