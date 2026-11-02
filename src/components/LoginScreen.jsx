@@ -36,7 +36,7 @@ export default function LoginScreen({ onSuccess }) {
         </div>
         <p className="tv-login__eyebrow">Attendance display</p>
         <h1>
-          <span className="tv__brand-hi">समयपाल</span>
+          <span className="tv__brand-hi">समयपल</span>
           <span className="tv__brand-sep">:</span>
           <span>{BRAND_NAME}</span>
         </h1>
