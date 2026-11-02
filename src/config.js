@@ -10,6 +10,7 @@ export const BRAND_NAME_HI = 'समयपल'
 export const TV_ENDPOINTS = {
   LOGIN: '/tv/login',
   SESSION: '/tv/session',
+  PHOTO: '/tv/photo',
   LIVE: '/tv/live',
   LIVE_STREAM: '/tv/live/stream',
 }

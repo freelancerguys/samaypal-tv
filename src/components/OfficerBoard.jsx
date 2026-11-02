@@ -1,4 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { getTvEmployeePhotoUrl } from '../api/tvApi'
+import { getTvToken } from '../auth'
 
 /** Slow continuous crawl (~28px/sec). */
 const SCROLL_PX_PER_MS = 0.028
@@ -16,6 +18,59 @@ function rowToneClass(row) {
   if (!hasPunch(row)) return 'board__row--absent'
   if (isCurrentlyIn(row)) return 'board__row--in'
   return 'board__row--out'
+}
+
+function initialsFromName(name) {
+  const parts = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase()
+}
+
+/** Accept data-URL, raw base64, or http(s) URL. */
+function toProfileImageSrc(value) {
+  if (!value || typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (trimmed.startsWith('data:')) return trimmed
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
+  return `data:image/jpeg;base64,${trimmed}`
+}
+
+function OfficerPhoto({ row }) {
+  const [failed, setFailed] = useState(false)
+  const embedded = toProfileImageSrc(row?.profileImage || row?.faceImage)
+  const remote =
+    !embedded && row?.hasPhoto === true && row?._id
+      ? getTvEmployeePhotoUrl(row._id, getTvToken())
+      : ''
+  const src = embedded || remote
+
+  useEffect(() => {
+    setFailed(false)
+  }, [src])
+
+  if (!src || failed) {
+    return (
+      <span className="officer-photo officer-photo--fallback" aria-hidden="true">
+        {initialsFromName(row?.name)}
+      </span>
+    )
+  }
+
+  return (
+    <img
+      className="officer-photo"
+      src={src}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+    />
+  )
 }
 
 function InOutStatus({ row }) {
@@ -110,7 +165,10 @@ export default function OfficerBoard({ board }) {
                 >
                   <td>{index + 1}</td>
                   <td>
-                    <div className="officer-name">{row.name}</div>
+                    <div className="officer-identity">
+                      <OfficerPhoto row={row} />
+                      <div className="officer-name">{row.name}</div>
+                    </div>
                   </td>
                   <td>{row.designation || '—'}</td>
                   <td>{row.workplace || '—'}</td>

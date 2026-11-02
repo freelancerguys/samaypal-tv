@@ -8,6 +8,14 @@ function buildUrl(path) {
   return `${API_BASE_URL}${path}`
 }
 
+/** Authenticated profile photo URL for <img src> (User.faceImage). */
+export function getTvEmployeePhotoUrl(userId, token = getTvToken()) {
+  if (!userId) return ''
+  const id = encodeURIComponent(String(userId))
+  const q = token ? `?token=${encodeURIComponent(token)}` : ''
+  return `${API_BASE_URL}${TV_ENDPOINTS.PHOTO}/${id}${q}`
+}
+
 function authHeaders(token = getTvToken()) {
   const headers = {
     Accept: 'application/json',
