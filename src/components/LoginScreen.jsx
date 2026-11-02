@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BRAND_NAME, WORKSHOP_NAME } from '../config'
+import { BRAND_NAME, BRAND_NAME_HI, WORKSHOP_NAME } from '../config'
 import { saveTvSession } from '../auth'
 import { loginTvDisplayAPI } from '../api/tvApi'
 
@@ -36,7 +36,7 @@ export default function LoginScreen({ onSuccess }) {
         </div>
         <p className="tv-login__eyebrow">Attendance display</p>
         <h1>
-          <span className="tv__brand-hi">समयपल</span>
+          <span className="tv__brand-hi">{BRAND_NAME_HI}</span>
           <span className="tv__brand-sep">:</span>
           <span>{BRAND_NAME}</span>
         </h1>

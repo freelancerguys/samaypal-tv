@@ -4,7 +4,7 @@ import OfficerBoard from './components/OfficerBoard'
 import LoginScreen from './components/LoginScreen'
 import { useTvLive } from './hooks/useTvLive'
 import { isTvAuthenticated } from './auth'
-import { BRAND_NAME, WORKSHOP_NAME, WORKSHOP_NAME_HI } from './config'
+import { BRAND_NAME, BRAND_NAME_HI, WORKSHOP_NAME, WORKSHOP_NAME_HI } from './config'
 import { formatClock, formatClockDate } from './utils/formatTime'
 import './App.css'
 
@@ -40,7 +40,7 @@ function LiveDashboard() {
 
         <div className="tv__brand">
           <h1>
-            <span className="tv__brand-hi">समयपाल</span>
+            <span className="tv__brand-hi">{BRAND_NAME_HI}</span>
             <span className="tv__brand-sep">:</span>
             <span className="tv__brand-en">{BRAND_NAME}</span>
           </h1>
