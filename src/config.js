@@ -3,7 +3,7 @@ export const API_BASE_URL = 'https://samaypaal.freelancerguys.com/api'
 // export const API_BASE_URL = 'http://127.0.0.1:3000/api'
 
 export const WORKSHOP_NAME = 'Eastern Railway Workshop, Kanchrapara'
-export const WORKSHOP_NAME_HI = 'पूर्वी रेलवे कारखाना, कांचरापाड़ा'
+export const WORKSHOP_NAME_HI = 'पूर्व रेलवे कारखाना, कांचरापाड़ा'
 export const BRAND_NAME = 'SAMAYPAL'
 
 export const TV_ENDPOINTS = {
