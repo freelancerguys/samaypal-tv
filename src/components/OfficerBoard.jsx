@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getTvEmployeePhotoUrl } from '../api/tvApi'
 import { getTvToken } from '../auth'
 
@@ -92,9 +92,75 @@ function InOutStatus({ row }) {
   )
 }
 
+function OfficerTable({ rows, startIndex }) {
+  if (rows.length === 0) {
+    return (
+      <table className="board__table">
+        <thead>
+          <tr>
+            <th>Sl.</th>
+            <th>Name</th>
+            <th>Shop / Office</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colSpan={4} className="board__empty">
+              —
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    )
+  }
+
+  return (
+    <table className="board__table">
+      <thead>
+        <tr>
+          <th>Sl.</th>
+          <th>Name</th>
+          <th>Shop / Office</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, index) => (
+          <tr
+            key={row._id || row.employeeId || startIndex + index}
+            className={`board__row ${rowToneClass(row)}`.trim()}
+          >
+            <td>{startIndex + index}</td>
+            <td>
+              <div className="officer-identity">
+                <OfficerPhoto row={row} />
+                <div className="officer-name">{row.name}</div>
+              </div>
+            </td>
+            <td>{row.workplace || '—'}</td>
+            <td>
+              <InOutStatus row={row} />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
 export default function OfficerBoard({ board }) {
   const officers = Array.isArray(board?.officers) ? board.officers : []
   const wrapRef = useRef(null)
+
+  const { left, right, mid } = useMemo(() => {
+    const splitAt = Math.ceil(officers.length / 2)
+    return {
+      mid: splitAt,
+      left: officers.slice(0, splitAt),
+      right: officers.slice(splitAt),
+    }
+  }, [officers])
 
   useEffect(() => {
     const el = wrapRef.current
@@ -140,46 +206,18 @@ export default function OfficerBoard({ board }) {
       </header>
 
       <div className="board__table-wrap" ref={wrapRef}>
-        <table className="board__table">
-          <thead>
-            <tr>
-              <th>Sl.</th>
-              <th>Name</th>
-              <th>Designation</th>
-              <th>Shop / Office</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {officers.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="board__empty">
-                  No SSE / IC found for today’s board.
-                </td>
-              </tr>
-            ) : (
-              officers.map((row, index) => (
-                <tr
-                  key={row._id || row.employeeId || index}
-                  className={`board__row ${rowToneClass(row)}`.trim()}
-                >
-                  <td>{index + 1}</td>
-                  <td>
-                    <div className="officer-identity">
-                      <OfficerPhoto row={row} />
-                      <div className="officer-name">{row.name}</div>
-                    </div>
-                  </td>
-                  <td>{row.designation || '—'}</td>
-                  <td>{row.workplace || '—'}</td>
-                  <td>
-                    <InOutStatus row={row} />
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        {officers.length === 0 ? (
+          <div className="board__empty">No SSE / IC found for today’s board.</div>
+        ) : (
+          <div className="board__columns">
+            <div className="board__column">
+              <OfficerTable rows={left} startIndex={1} />
+            </div>
+            <div className="board__column">
+              <OfficerTable rows={right} startIndex={mid + 1} />
+            </div>
+          </div>
+        )}
       </div>
     </section>
   )
